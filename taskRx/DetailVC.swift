@@ -7,37 +7,87 @@
 //
 
 import UIKit
+import AVKit
 
-class DetailVC: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource {
+class DetailVC: UIViewController {
     @IBOutlet weak var collectionView: UICollectionView!
+    @IBOutlet weak var videoCollectionView: UICollectionView!
+    @IBOutlet weak var videoCollectionViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var lblCategory: UILabel!
     @IBOutlet weak var lblTitle: UILabel!
     @IBOutlet weak var lblDate: UILabel!
     @IBOutlet weak var bodyTextView: UITextView!
     
-    var news: News?
+    var news: News!
+    let moviePlayer = AVPlayerViewController()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.lblCategory.text = news?.category
-        self.lblTitle.text = news?.title
+        self.lblCategory.text = news.category
+        self.lblTitle.text = news.title
         
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM dd HH:mm"
-        let myString = formatter.string(from: (news?.date!)!)
+        let myString = formatter.string(from: news.date!)
         self.lblDate.text = myString
         
-        self.bodyTextView.text = news?.body
+        self.bodyTextView.text = news.body
+        
+        if (self.news.videos?.count ?? 0) == 0 {
+            self.videoCollectionViewHeightConstraint.constant = 0
+        }
     }
+    
+    func playVideoWithId(_ videoId: String) {
+        let youtubeURL = URL(string: "https://www.youtube.com/watch?v=\(videoId)")!
+        Youtube.h264videosWithYoutubeURL(youtubeURL, completion: { (videoInfo, error) -> Void in
+            if let videoURLString = videoInfo?["url"] as? String, let videoURL = URL(string: videoURLString) {
+                let player = AVPlayer(url: videoURL)
+                self.moviePlayer.player = player
+                self.present(self.moviePlayer, animated: true) {
+                    self.moviePlayer.player!.play()
+                }
+            } else {
+                let alert = UIAlertController(title: "Error", message: "This video contains content from Vevo. It is restricted from playback on certain sites or applications.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Ok", style: .cancel, handler: { (action) in
+                    self.dismiss(animated: true, completion: nil)
+                }))
+                self.present(alert, animated: true, completion: nil)
+            }
+        })
+    }
+}
 
-
+extension DetailVC: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.news?.gallery?.count ?? 0
+        if collectionView == self.collectionView {
+            return self.news.gallery?.count ?? 0
+        }
+        return self.news.videos?.count ?? 0
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "GalleryCell", for: indexPath) as! GalleryCell
-        cell.detailInfo = self.news?.gallery![indexPath.row]
+        if collectionView == self.collectionView {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "GalleryCell", for: indexPath) as! GalleryCell
+            cell.detailInfo = self.news.gallery?[indexPath.row]
+            return cell
+        }
+        
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VideoCell", for: indexPath) as! VideoCell
+        cell.detailInfo = self.news.videos?[indexPath.row]
         return cell
     }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if collectionView == self.collectionView {
+            let galleryItemVC = storyboard?.instantiateViewController(withIdentifier: "GalleryItemVC") as! GalleryItemVC
+            galleryItemVC.imageGalleryItem = self.news.gallery![indexPath.row]
+            self.present(galleryItemVC, animated: true, completion: nil)
+            return
+        }
+        
+        let videoItem = self.news.videos![indexPath.row]
+        self.playVideoWithId(videoItem.youtubeId!)
+    }
 }
+

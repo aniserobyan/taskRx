@@ -20,6 +20,12 @@ class NewsCell: UITableViewCell {
         // Initialization code
     }
     
+    var isRead:Bool = false {
+        didSet {
+            self.lblTitle.textColor = isRead ? UIColor.red : UIColor.black
+        }
+    }
+    
     var news: News? {
         didSet {
             self.lblTitle.text = news?.title

@@ -16,6 +16,7 @@ class News: Mappable {
     var image: String?
     var body: String?
     var gallery: [GalleryItem]?
+    var videos: [VideoItem]?
     
     required init(map: Map) {
         
@@ -28,5 +29,6 @@ class News: Mappable {
         self.image <- map["coverPhotoUrl"]
         self.body <- map["body"]
         self.gallery <- map["gallery"]
+        self.videos <- map["video"]
     }
 }
