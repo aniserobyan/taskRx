@@ -48,11 +48,8 @@ class DetailVC: UIViewController {
                     self.moviePlayer.player!.play()
                 }
             } else {
-                let alert = UIAlertController(title: "Error", message: "This video contains content from Vevo. It is restricted from playback on certain sites or applications.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .cancel, handler: { (action) in
-                    self.dismiss(animated: true, completion: nil)
-                }))
-                self.present(alert, animated: true, completion: nil)
+                let youtubeAppUrl = URL(string: "http://www.youtube.com/watch?v=" + videoId)
+                UIApplication.shared.openURL(youtubeAppUrl!)
             }
         })
     }
